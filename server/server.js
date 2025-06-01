@@ -1,10 +1,13 @@
 const Fastify = require('fastify')
 const mongoose = require('mongoose')
 require('dotenv').config()
+const userRoutes = require('./routes/routes');
 
 const server = Fastify({
   logger: true,
 });
+
+server.register(userRoutes, { prefix: '/api/users' });
 
 server.get('/ping', async (req, reply) => {
   return { hello: 'world' };
