@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/User_model');
+const jwt = require('jsonwebtoken');
 
 const handleRegister = async (req, reply) => {
   const { email, password } = req.body;
@@ -23,6 +24,28 @@ const handleRegister = async (req, reply) => {
   });
 };
 
+const handleLogin = async (req, reply) => {
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email }).select('+password');
+  if (!user) {
+    return reply.code(400).send({ error: 'Невірний email або пароль' });
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return reply.code(400).send({ error: 'Невірний email або пароль' });
+  }
+
+  const token = jwt.sign(
+    { id: user._id, email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+
+  reply.send({ token });
+};
+
 module.exports = {
-  handleRegister
+  handleRegister, handleLogin
 };
