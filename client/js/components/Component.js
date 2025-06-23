@@ -5,11 +5,11 @@ class Component {
   }
 
   clear() {
-    this.container.innerHTML = '';
+    this.container.innerHTML = "";
   }
 
-  createInput({ name, type = 'text', placeholder }) {
-    const input = document.createElement('input');
+  createInput({ name, type = "text", placeholder }) {
+    const input = document.createElement("input");
     input.name = name;
     input.type = type;
     input.placeholder = placeholder;
@@ -18,23 +18,23 @@ class Component {
   }
 
   createButton(text) {
-    const button = document.createElement('button');
+    const button = document.createElement("button");
     button.textContent = text;
     return button;
   }
 
   createErrorDiv() {
-    const error = document.createElement('div');
-    error.style.color = 'red';
-    error.style.marginTop = '10px';
+    const error = document.createElement("div");
+    error.style.color = "red";
+    error.style.marginTop = "10px";
     return error;
   }
 
   createTitle(text) {
-    const h2 = document.createElement('h2');
+    const h2 = document.createElement("h2");
     h2.textContent = text;
     return h2;
   }
 }
 
-export {Component}
+export { Component };

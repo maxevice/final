@@ -1,75 +1,128 @@
 import { Component } from "./Component.js";
+import { APIProxy } from "../apiProxy.js";
+import { eventBus } from "../eventBus.js";
 
 class Dashboard extends Component {
   async render() {
-    const token = localStorage.getItem('token');
-    if (!token) return this.onNavigate('/login');
-
     this.clear();
-    const title = this.createTitle('Мої звички');
-    const counter = document.createElement('div');
-    const list = document.createElement('ul');
-    const form = document.createElement('form');
-    const input = this.createInput({ name: 'title', placeholder: 'Нова звичка' });
-    const submit = this.createButton('Додати');
-    const logout = this.createButton('Вийти');
-    const error = this.createErrorDiv();
+    this.container.className = "page dashboard-page";
 
-    form.append(input, submit);
-    logout.style.marginTop = '10px';
-    counter.style.marginBottom = '10px';
-    counter.style.fontWeight = 'bold';
+    const title = this.createTitle("Ваші звички");
+    this.statusBar = document.createElement("div");
+    this.statusBar.className = "habit-status";
+    this.container.append(title, this.statusBar);
 
-    this.container.append(title, counter, list, form, logout, error);
+    const list = document.createElement("ul");
+    list.className = "habit-list";
+    this.container.appendChild(list);
+
+    const form = document.createElement("form");
+    const input = this.createInput({
+      name: "title",
+      type: "text",
+      placeholder: "Нова звичка",
+    });
+    const addButton = this.createButton("Додати");
+    form.append(input, addButton);
+    this.container.appendChild(form);
 
     try {
-      const res = await fetch('/api/habits', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const data = await APIProxy.get("/api/habits");
+      this.updateHabitStatus(data);
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Помилка при завантаженні');
-      counter.textContent = `Звичок: ${data.length}`;
-      
-      for (const h of data) {
-        const li = document.createElement('li');
-        li.textContent = h.title;
-        list.appendChild(li);
-      }
-    } catch (err) {
-      error.textContent = err.message;
-    }
+      this.renderHabits(data, list);
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const title = input.value.trim();
-      if (!title) return;
+      list.addEventListener("change", async (event) => {
+        const target = event.target;
+        if (target.tagName === "INPUT" && target.type === "checkbox") {
+          const habitId = target.getAttribute("data-id");
+          const done = target.checked;
 
-      const res = await fetch('/api/habits', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ title })
-      });
-
-        if (!res.ok) {
-        const data = await res.json();
-        error.textContent = data.error || 'Сталася помилка';
-        return;
+          try {
+            await APIProxy.patch(`/api/habits/${habitId}`, { done });
+            eventBus.emit("habitStatusChanged");
+          } catch (err) {
+            console.error("Помилка при оновленні статусу звички:", err);
+          }
         }
+      });
 
-        input.value = '';
-        this.render();
+      list.addEventListener("click", async (event) => {
+        const target = event.target;
 
-    });
+        if (
+          target.tagName === "BUTTON" &&
+          target.classList.contains("delete-btn")
+        ) {
+          const habitId = target.getAttribute("data-id");
 
-    logout.addEventListener('click', () => {
-      localStorage.removeItem('token');
-      this.onNavigate('/login');
-    });
+          try {
+            await APIProxy.delete(`/api/habits/${habitId}`);
+            const updated = await APIProxy.get("/api/habits");
+            list.innerHTML = "";
+            this.renderHabits(updated, list);
+            this.updateHabitStatus(updated);
+          } catch (err) {
+            console.error("Помилка при видаленні звички:", err);
+          }
+        }
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const title = input.value.trim();
+        if (!title) return;
+        try {
+          await APIProxy.post("/api/habits", { title });
+          input.value = "";
+          const updated = await APIProxy.get("/api/habits");
+          list.innerHTML = "";
+          this.renderHabits(updated, list);
+          this.updateHabitStatus(updated);
+        } catch (err) {
+          console.error("Помилка при додаванні звички:", err);
+        }
+      });
+
+      eventBus.subscribe("habitStatusChanged", async () => {
+        try {
+          const updatedHabits = await APIProxy.get("/api/habits");
+          this.updateHabitStatus(updatedHabits);
+        } catch (err) {
+          console.error("Помилка при оновленні статусу:", err);
+        }
+      });
+    } catch (err) {
+      console.error("Помилка завантаження звичок:", err);
+    }
+  }
+
+  updateHabitStatus(habits) {
+    const total = habits.length;
+    const doneCount = habits.filter((h) => h.done).length;
+    this.statusBar.textContent = `Виконано ${doneCount} з ${total} звичок`;
+  }
+  renderHabits(data, list) {
+    for (const h of data) {
+      const li = document.createElement("li");
+      li.setAttribute("data-id", h._id);
+
+      const span = document.createElement("span");
+      span.textContent = h.title;
+
+      const checkbox = this.createInput({ type: "checkbox" });
+      checkbox.setAttribute("data-id", h._id);
+      checkbox.checked = h.done;
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "✖";
+      deleteBtn.className = "delete-btn";
+      deleteBtn.setAttribute("data-id", h._id);
+
+      li.append(checkbox, span, deleteBtn);
+      list.appendChild(li);
+    }
   }
 }
 
-export {Dashboard}
+export { Dashboard };

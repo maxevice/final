@@ -1,0 +1,32 @@
+.page {
+  padding: 2rem;
+  max-width: 500px;
+  margin: 40px auto;
+  border-radius: 12px;
+  background-color: white;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+}
+
+.login-page {
+  border-left: 8px solid #ff0008;
+}
+.register-page {
+  border-left: 8px solid #28a745;
+}
+.dashboard-page {
+  border-left: 8px solid #6c63ff;
+}
+
+.delete-btn {
+  background: transparent;
+  border: none;
+  color: #e74c3c;
+  font-size: 18px;
+  margin-left: 10px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.delete-btn:hover {
+  color: #c0392b;
+}

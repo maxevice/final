@@ -1,15 +1,15 @@
 const registerSchema = {
   body: {
-    type: 'object',
-    required: ['email', 'password'],
+    type: "object",
+    required: ["email", "password"],
     properties: {
-      email: { type: 'string', format: 'email' },
-      password: { type: 'string', minLength: 6 }
+      email: { type: "string", format: "email" },
+      password: { type: "string", minLength: 6 },
     },
-    additionalProperties: false
-  }
+    additionalProperties: false,
+  },
 };
 
 module.exports = {
-  registerSchema
+  registerSchema,
 };
